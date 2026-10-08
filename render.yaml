@@ -1,0 +1,20 @@
+# Render Blueprint: one web service serves both the API and the built React app.
+services:
+  - type: web
+    name: promptshield
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 20
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false   # paste it in the Render dashboard; never commit it
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
