@@ -15,10 +15,10 @@ export default function Policy() {
   const [p, setP] = useState(null);
   const [ai, setAi] = useState(false);
   const [msg, setMsg] = useState('');
-  useEffect(() => { api.get('/api/policy').then((r) => { setP(r.data.policy); setAi(r.data.aiConfigured); }); }, []);
+  useEffect(() => { api.get('/api/v1/policy').then((r) => { setP(r.data.policy); setAi(r.data.aiConfigured); }); }, []);
   if (!p) return <p className="text-mute">Loading…</p>;
   const set = (k) => (v) => { setP({ ...p, [k]: v }); setMsg(''); };
-  const save = async () => { const r = await api.put('/api/policy', p); setMsg(r.status === 200 ? 'Policy saved. It applies to your next request.' : 'Could not save policy.'); };
+  const save = async () => { const r = await api.put('/api/v1/policy', p); setMsg(r.status === 200 ? 'Policy saved. It applies to your next request.' : 'Could not save policy.'); };
 
   return (
     <div className="max-w-2xl space-y-5">

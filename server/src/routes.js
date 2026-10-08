@@ -21,7 +21,7 @@ const publicOut = (o, eventId) => ({
   stages: o.stages, latency: o.latency,
 });
 
-r.post('/api/chat', auth, limiter, validate(chatSchema), async (req, res) => {
+r.post('/api/v1/chat', auth, limiter, validate(chatSchema), async (req, res) => {
   const out = await runPipeline({ prompt: req.body.prompt, policy: getPolicy(req.user.id), guardrails: req.body.guardrails });
   const id = saveEvent(req.user.id, out);
   res.status(out.action === 'BLOCKED' ? 403 : 200).json(publicOut(out, id));
@@ -50,7 +50,7 @@ r.post('/v1/chat/completions', auth, limiter, validate(oaiSchema), async (req, r
 });
 
 /* ---- audit log ---- */
-r.get('/api/events', auth, (req, res) => {
+r.get('/api/v1/events', auth, (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 25, 100), offset = Number(req.query.offset) || 0;
   const action = ['ALLOWED', 'REDACTED', 'BLOCKED', 'UNGUARDED'].includes(req.query.action) ? req.query.action : null;
   const where = 'user_id=?' + (action ? ' AND action=?' : '');
@@ -60,7 +60,7 @@ r.get('/api/events', auth, (req, res) => {
   res.json({ total, events: rows.map(parseEvent) });
 });
 
-r.get('/api/events/export', auth, (req, res) => {
+r.get('/api/v1/events/export', auth, (req, res) => {
   const rows = db.prepare('SELECT * FROM events WHERE user_id=? ORDER BY id DESC').all(req.user.id).map(parseEvent);
   if (req.query.format === 'csv') {
     const cols = ['id', 'created_at', 'action', 'category', 'risk', 'source', 'reason', 'pii', 'sanitized'];
@@ -71,14 +71,14 @@ r.get('/api/events/export', auth, (req, res) => {
   res.set('content-disposition', 'attachment; filename="promptshield-audit.json"').json(rows);
 });
 
-r.get('/api/events/:id', auth, (req, res) => {
+r.get('/api/v1/events/:id', auth, (req, res) => {
   const row = db.prepare('SELECT * FROM events WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
   if (!row) return res.status(404).json({ error: 'Event not found' });
   res.json(parseEvent(row));
 });
 
 /* ---- analytics ---- */
-r.get('/api/stats', auth, (req, res) => {
+r.get('/api/v1/stats', auth, (req, res) => {
   const uid = req.user.id;
   const one = (sql, ...a) => db.prepare(sql).all(uid, ...a);
   const byAction = Object.fromEntries(one('SELECT action,COUNT(*) c FROM events WHERE user_id=? AND guardrails=1 GROUP BY action').map((x) => [x.action, x.c]));
@@ -110,16 +110,16 @@ const policySchema = z.object({
   piiMasking: z.boolean(), reversibleRedaction: z.boolean(), injectionDetection: z.boolean(), toxicityDetection: z.boolean(), outputGuard: z.boolean(),
   strictness: z.enum(['low', 'medium', 'high']), aiMode: z.enum(['off', 'tiered', 'always']), failMode: z.enum(['closed', 'open']),
 });
-r.get('/api/policy', auth, (req, res) => res.json({ policy: getPolicy(req.user.id), defaults: DEFAULT_POLICY, aiConfigured: !!config.geminiKey }));
-r.put('/api/policy', auth, validate(policySchema), (req, res) => { setPolicy(req.user.id, req.body); res.json({ policy: req.body }); });
+r.get('/api/v1/policy', auth, (req, res) => res.json({ policy: getPolicy(req.user.id), defaults: DEFAULT_POLICY, aiConfigured: !!config.geminiKey }));
+r.put('/api/v1/policy', auth, validate(policySchema), (req, res) => { setPolicy(req.user.id, req.body); res.json({ policy: req.body }); });
 
 /* ---- benchmark ---- */
-r.post('/api/benchmark', auth, rateLimit({ windowMs: 60_000, limit: 6 }), async (req, res) => {
+r.post('/api/v1/benchmark', auth, rateLimit({ windowMs: 60_000, limit: 6 }), async (req, res) => {
   const result = await runBenchmark(getPolicy(req.user.id));
   db.prepare('INSERT INTO benchmarks(user_id,json) VALUES(?,?)').run(req.user.id, JSON.stringify(result));
   res.json({ ...result, createdAt: new Date().toISOString() });
 });
-r.get('/api/benchmark/latest', auth, (req, res) => {
+r.get('/api/v1/benchmark/latest', auth, (req, res) => {
   const row = db.prepare('SELECT * FROM benchmarks WHERE user_id=? ORDER BY id DESC LIMIT 1').get(req.user.id);
   res.json(row ? { ...JSON.parse(row.json), createdAt: row.created_at } : null);
 });

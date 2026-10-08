@@ -49,7 +49,7 @@ export default function Sandbox() {
   async function run() {
     if (!prompt.trim()) return;
     setBusy(true); setSent(prompt);
-    const call = (guardrails) => api.post('/api/chat', { prompt, guardrails }).then((r) => r.data);
+    const call = (guardrails) => api.post('/api/v1/chat', { prompt, guardrails }).then((r) => r.data);
     try {
       const [off, on] = await Promise.all([compare ? call(false) : null, call(true)]);
       setRes({ off, on });

@@ -15,11 +15,11 @@ app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(',').map((s) => s.trim()), exposedHeaders: ['x-promptshield-event'] }));
 app.use(express.json({ limit: '64kb' }));
-app.use('/api/auth', rateLimit({ windowMs: 15 * 60_000, limit: 40, standardHeaders: true, legacyHeaders: false }), authRouter);
+app.use('/api/v1/auth', rateLimit({ windowMs: 15 * 60_000, limit: 40, standardHeaders: true, legacyHeaders: false }), authRouter);
 app.use(routes);
 
 // Serve the built React app from the same service (single-deploy option).
-const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
+const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist');
 if (fs.existsSync(dist)) {
   app.use(express.static(dist));
   app.get(/^(?!\/(api|v1)\/).*/, (_q, s) => s.sendFile(path.join(dist, 'index.html')));

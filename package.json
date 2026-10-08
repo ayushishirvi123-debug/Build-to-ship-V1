@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "engines": { "node": ">=18" },
   "scripts": {
-    "build": "npm --prefix backend install && npm --prefix frontend install && npm --prefix frontend run build",
-    "start": "npm --prefix backend start",
-    "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "test": "npm --prefix backend test"
+    "build": "npm --prefix server install && npm --prefix client install && npm --prefix client run build",
+    "start": "npm --prefix server start",
+    "dev:backend": "npm --prefix server run dev",
+    "dev:frontend": "npm --prefix client run dev",
+    "test": "npm --prefix server test"
   }
 }

@@ -7,7 +7,7 @@ const Code = ({ children }) => <pre className="overflow-x-auto rounded-lg bg-ink
 export default function Integrate() {
   const [key, setKey] = useState('');
   const k = key || 'ps_YOUR_API_KEY';
-  async function gen() { const r = await api.post('/api/auth/apikey'); if (r.status === 200) setKey(r.data.apiKey); }
+  async function gen() { const r = await api.post('/api/v1/auth/apikey'); if (r.status === 200) setKey(r.data.apiKey); }
   return (
     <div className="max-w-3xl space-y-5">
       <header>

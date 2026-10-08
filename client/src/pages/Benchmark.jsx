@@ -6,10 +6,10 @@ export default function Benchmark() {
   const [b, setB] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  useEffect(() => { api.get('/api/benchmark/latest').then((r) => setB(r.data)); }, []);
+  useEffect(() => { api.get('/api/v1/benchmark/latest').then((r) => setB(r.data)); }, []);
   async function run() {
     setBusy(true); setErr('');
-    const r = await api.post('/api/benchmark');
+    const r = await api.post('/api/v1/benchmark');
     if (r.status === 200) setB(r.data); else setErr(r.data?.error || 'Benchmark failed. Wait a minute and retry.');
     setBusy(false);
   }

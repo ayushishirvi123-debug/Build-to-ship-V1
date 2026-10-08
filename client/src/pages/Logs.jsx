@@ -12,7 +12,7 @@ export default function Logs() {
   const per = 15;
 
   const load = useCallback(() => {
-    api.get('/api/events', { params: { limit: per, offset: page * per, action: filter === 'ALL' ? undefined : filter } }).then((r) => setData(r.data));
+    api.get('/api/v1/events', { params: { limit: per, offset: page * per, action: filter === 'ALL' ? undefined : filter } }).then((r) => setData(r.data));
   }, [filter, page]);
   useEffect(() => { load(); const t = setInterval(load, 8000); return () => clearInterval(t); }, [load]);
 
@@ -24,8 +24,8 @@ export default function Logs() {
           <p className="text-sm text-mute">Every decision, explained. Raw prompts are never stored, only the version with personal data tokenized.</p>
         </div>
         <div className="flex gap-2">
-          <Btn kind="ghost" onClick={() => download('/api/events/export?format=csv', 'promptshield-audit.csv')}>Export CSV</Btn>
-          <Btn kind="ghost" onClick={() => download('/api/events/export?format=json', 'promptshield-audit.json')}>Export JSON</Btn>
+          <Btn kind="ghost" onClick={() => download('/api/v1/events/export?format=csv', 'promptshield-audit.csv')}>Export CSV</Btn>
+          <Btn kind="ghost" onClick={() => download('/api/v1/events/export?format=json', 'promptshield-audit.json')}>Export JSON</Btn>
         </div>
       </header>
       <div className="flex flex-wrap gap-2">

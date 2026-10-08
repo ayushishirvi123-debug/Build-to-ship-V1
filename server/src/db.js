@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { config } from './config.js';
 
 fs.mkdirSync(path.dirname(config.dbPath), { recursive: true });
@@ -42,6 +43,11 @@ CREATE TABLE IF NOT EXISTS benchmarks(
 );
 `);
 
+try {
+  db.exec('ALTER TABLE events ADD COLUMN prev_hash TEXT;');
+  db.exec('ALTER TABLE events ADD COLUMN curr_hash TEXT;');
+} catch {}
+
 export const DEFAULT_POLICY = {
   piiMasking: true,
   reversibleRedaction: true,
@@ -65,10 +71,18 @@ export function setPolicy(userId, policy) {
 }
 
 export function saveEvent(userId, out, extra = {}) {
+  const lastRow = db.prepare('SELECT curr_hash FROM events ORDER BY id DESC LIMIT 1').get();
+  const prev_hash = lastRow?.curr_hash || null;
+  const piiTypes = JSON.stringify([...new Set((out.spans || []).map((s) => s.type))]);
+  const rules = JSON.stringify((out.rules || []).map(({ id, label, explain, w }) => ({ id, label, explain, w })));
+  
+  const hashData = JSON.stringify({ userId, action: out.action, category: out.category, risk: out.risk, pii: piiTypes, prev_hash });
+  const curr_hash = crypto.createHash('sha256').update(hashData).digest('hex');
+
   const info = db
     .prepare(
-      `INSERT INTO events(user_id,guardrails,action,category,risk,source,reason,rules,pii,sanitized,latency,seeded,created_at)
-       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,COALESCE(?,datetime('now')))`
+      `INSERT INTO events(user_id,guardrails,action,category,risk,source,reason,rules,pii,sanitized,latency,seeded,created_at,prev_hash,curr_hash)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,COALESCE(?,datetime('now')),?,?)`
     )
     .run(
       userId,
@@ -78,12 +92,14 @@ export function saveEvent(userId, out, extra = {}) {
       out.risk,
       out.source || null,
       out.reason || null,
-      JSON.stringify((out.rules || []).map(({ id, label, explain, w }) => ({ id, label, explain, w }))),
-      JSON.stringify([...new Set((out.spans || []).map((s) => s.type))]),
+      rules,
+      piiTypes,
       (out.storedPrompt || '').slice(0, 2000),
       JSON.stringify(out.latency || {}),
       extra.seeded ? 1 : 0,
-      extra.createdAt || null
+      extra.createdAt || null,
+      prev_hash,
+      curr_hash
     );
   return info.lastInsertRowid;
 }

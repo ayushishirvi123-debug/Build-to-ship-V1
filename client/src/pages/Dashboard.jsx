@@ -7,7 +7,7 @@ export default function Dashboard() {
   const [s, setS] = useState(null);
   useEffect(() => {
     let alive = true;
-    const load = () => api.get('/api/stats').then((r) => alive && setS(r.data));
+    const load = () => api.get('/api/v1/stats').then((r) => alive && setS(r.data));
     load();
     const t = setInterval(load, 5000);
     return () => { alive = false; clearInterval(t); };
